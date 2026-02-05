@@ -15,7 +15,7 @@ import {
   AlertDialogAction
 } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
-import { Plus, Search } from "lucide-react";
+import { Plus, Search, Loader2 } from "lucide-react";
 import IngredientsTable from "@/components/IngredientsTable";
 import AddIngredientForm from "@/components/AddIngredientForm";
 import { supabase } from "@/utils/supabase";
@@ -46,6 +46,7 @@ const Produkty = () => {
   const [loading, setLoading] = useState(true);
   const [hasAddFormChanges, setHasAddFormChanges] = useState(false);
   const [hasEditFormChanges, setHasEditFormChanges] = useState(false);
+  const [isUpdatingProduct, setIsUpdatingProduct] = useState(false);
 
   // State for product edit warning modal
   const [showWarningModal, setShowWarningModal] = useState(false);
@@ -594,6 +595,7 @@ const Produkty = () => {
   const handleConfirmUpdate = async (strategy: 'update_all' | 'update_new_only' | 'create_new') => {
     if (!pendingUpdate || !editingIngredient) return;
 
+    setIsUpdatingProduct(true);
     try {
       if (strategy === 'create_new') {
         // Create new product variant
@@ -685,6 +687,8 @@ const Produkty = () => {
         description: "Nie udało się zaktualizować składnika",
         variant: "destructive",
       });
+    } finally {
+      setIsUpdatingProduct(false);
     }
   };
 
@@ -1005,14 +1009,25 @@ const Produkty = () => {
           </div>
 
           <AlertDialogFooter className="flex-col sm:flex-row gap-2 sm:justify-between">
-            <AlertDialogCancel className="w-full sm:w-auto bg-zinc-700 hover:bg-zinc-600 mt-0">
+            <AlertDialogCancel
+              className="w-full sm:w-auto bg-zinc-700 hover:bg-zinc-600 mt-0"
+              disabled={isUpdatingProduct}
+            >
               Anuluj
             </AlertDialogCancel>
             <Button
               onClick={() => handleConfirmUpdate('update_all')}
               className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white font-semibold"
+              disabled={isUpdatingProduct}
             >
-              Zaktualizuj wszystko
+              {isUpdatingProduct ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Aktualizuję...
+                </>
+              ) : (
+                "Zaktualizuj wszystko"
+              )}
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
