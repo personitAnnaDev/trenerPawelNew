@@ -706,7 +706,7 @@ const NowaPotrawa = ({ potrawaId, onClose, onPotrawaCreated, onFormChange }: Now
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-gray-100">Kategoria</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl>
                     <SelectTrigger id="potrawa-kategoria" className="bg-zinc-800 border-zinc-700 text-zinc-100 focus:border-[#a08032] focus:ring-[#a08032]">
                       <SelectValue placeholder="Wybierz kategorię" />
