@@ -321,116 +321,36 @@ const Produkty = () => {
   };
 
   // Update cached macros in dishes and meal_ingredients when product is edited
+  // Uses PostgreSQL RPC for atomic update (single query instead of N+1)
   const updateCachedMacros = async (
     ingredientId: string,
     newValues: Omit<Ingredient, "id">
   ) => {
-    try {
-      // 1. Update dishes.ingredients_json and ingredients_description
-      const { data: affectedDishes, error: dishesError } = await supabase
-        .from('dishes')
-        .select('id, ingredients_json')
-        .eq('user_id', user?.id);
+    const { data, error } = await supabase.rpc('update_ingredient_cached_macros', {
+      p_ingredient_id: ingredientId,
+      p_user_id: user?.id,
+      p_name: newValues.nazwa,
+      p_calories: newValues.kcal,
+      p_protein: newValues.macro.białko,
+      p_fat: newValues.macro.tłuszcz,
+      p_carbs: newValues.macro.węglowodany,
+      p_fiber: newValues.blonnik || 0,
+      p_unit: newValues.unit,
+      p_unit_weight: newValues.unit_weight
+    });
 
-      if (dishesError) throw dishesError;
-
-      for (const dish of affectedDishes || []) {
-        if (!dish.ingredients_json) continue;
-
-        // Check if this dish actually contains the ingredient
-        const hasIngredient = dish.ingredients_json.some((ing: any) => ing.ingredient_id === ingredientId);
-        if (!hasIngredient) continue;
-
-        const updatedIngredients = dish.ingredients_json.map((ing: any) => {
-          if (ing.ingredient_id !== ingredientId) return ing;
-
-          // Recalculate macros from new product values
-          const unitWeight = ing.unit === 'gramy' || ing.unit === 'g'
-            ? 1
-            : (ing.unit_weight || newValues.unit_weight);
-
-          const multiplier = (ing.quantity * unitWeight) / 100;
-
-          return {
-            ...ing,
-            name: newValues.nazwa,  // UPDATE NAME
-            unit: newValues.unit,    // UPDATE UNIT
-            unit_weight: newValues.unit_weight,  // UPDATE UNIT WEIGHT
-            calories: newValues.kcal * multiplier,
-            protein: newValues.macro.białko * multiplier,
-            fat: newValues.macro.tłuszcz * multiplier,
-            carbs: newValues.macro.węglowodany * multiplier,
-            fiber: (newValues.blonnik || 0) * multiplier
-          };
-        });
-
-        // Rebuild ingredients_description from updated ingredients
-        const newDescription = updatedIngredients
-          .map((ing: any) => `${ing.name} - ${ing.quantity} ${ing.unit}`)
-          .join(', ');
-
-        const { error: updateError } = await supabase
-          .from('dishes')
-          .update({
-            ingredients_json: updatedIngredients,
-            ingredients_description: newDescription || null
-          })
-          .eq('id', dish.id)
-          .eq('user_id', user?.id);
-
-        if (updateError) {
-          logger.error('Error updating dish:', dish.id, updateError);
-          throw updateError;
-        }
-      }
-
-      // 2. Update meal_ingredients
-      const { data: affectedMealIngredients, error: mealError } = await supabase
-        .from('meal_ingredients')
-        .select('id, quantity, unit, unit_weight')
-        .eq('ingredient_id', ingredientId);
-
-      if (mealError) throw mealError;
-
-      for (const mi of affectedMealIngredients || []) {
-        // Use cached unit_weight from meal_ingredients (not from product)
-        const cachedUnitWeight = mi.unit_weight || 100;
-
-        // Calculate grams based on unit type (same logic as calculateNutritionMacros)
-        let grams: number;
-        if (mi.unit === 'mililitry' || mi.unit === 'ml') {
-          // For ml: (quantity / 100) * unit_weight
-          grams = (mi.quantity / 100) * cachedUnitWeight;
-        } else if (mi.unit === 'gramy' || mi.unit === 'g') {
-          // For grams: quantity is already in grams
-          grams = mi.quantity;
-        } else {
-          // For other units (sztuka, etc.): quantity * unit_weight
-          grams = mi.quantity * cachedUnitWeight;
-        }
-
-        // Multiplier is grams / 100
-        const multiplier = grams / 100;
-
-        await supabase
-          .from('meal_ingredients')
-          .update({
-            name: newValues.nazwa,  // UPDATE NAME
-            calories: newValues.kcal * multiplier,
-            protein: newValues.macro.białko * multiplier,
-            fat: newValues.macro.tłuszcz * multiplier,
-            carbs: newValues.macro.węglowodany * multiplier,
-            fiber: (newValues.blonnik || 0) * multiplier
-            // DON'T update unit - keep the original unit from meal_ingredients
-          })
-          .eq('id', mi.id);
-      }
-
-      return true;
-    } catch (error) {
-      logger.error('Error updating cached macros:', error);
+    if (error) {
+      logger.error('Error updating cached macros via RPC:', error);
       throw error;
     }
+
+    if (data && !data.success) {
+      logger.error('RPC update_ingredient_cached_macros failed:', data.error);
+      throw new Error(data.error || 'Failed to update cached macros');
+    }
+
+    logger.info('Updated cached macros:', data);
+    return true;
   };
 
   // Remove ingredient from dishes.ingredients_json and ingredients_description
