@@ -1,0 +1,5 @@
+# Redirect old Netlify domain to new custom domain
+https://trener-pawel.netlify.app/*  https://app.staniszewskitrener.pl/:splat  301!
+
+# SPA fallback
+/*    /index.html   200

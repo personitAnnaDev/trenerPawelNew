@@ -1,0 +1,352 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Nutrition badges styling */
+.nutrition-kcal-badge {
+  @apply bg-[#a08032] text-white;
+}
+
+.nutrition-kcal-badge:hover {
+  @apply bg-[#a08032] text-white;
+}
+
+.nutrition-protein-badge {
+  @apply border-2 border-[#c4a856] text-[#c4a856] bg-transparent;
+}
+
+.nutrition-protein-badge:hover {
+  @apply border-2 border-[#c4a856] text-[#c4a856] bg-transparent;
+}
+
+.nutrition-carbs-badge {
+  @apply border-2 border-[#d4af37] text-[#d4af37] bg-transparent;
+}
+
+.nutrition-carbs-badge:hover {
+  @apply border-2 border-[#d4af37] text-[#d4af37] bg-transparent;
+}
+
+.nutrition-fat-badge {
+  @apply border-2 border-[#8b6914] text-[#8b6914] bg-transparent;
+}
+
+.nutrition-fat-badge:hover {
+  @apply border-2 border-[#8b6914] text-[#8b6914] bg-transparent;
+}
+
+.nutrition-fiber-badge {
+  @apply border-2 border-[#cd7f32] text-[#cd7f32] bg-transparent;
+}
+
+.nutrition-fiber-badge:hover {
+  @apply border-2 border-[#cd7f32] text-[#cd7f32] bg-transparent;
+}
+
+/* Definition of the design system based on the brandbook - Dark Mode with Zinc Palette */
+
+@layer base {
+  :root {
+    --background: 0 0% 3.9%; /* Very dark zinc background - zinc-950 */
+    --foreground: 0 0% 98%; /* Light text */
+
+    --card: 0 0% 5.9%; /* Dark zinc card background - zinc-900 */
+    --card-foreground: 0 0% 98%;
+
+    --popover: 0 0% 5.9%; /* Dark zinc popover - zinc-900 */
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 42 56% 41.6%; /* #a08032 - Keep golden primary from brandbook */
+    --primary-foreground: 0 0% 3.9%; /* Very dark zinc */
+
+    --secondary: 0 0% 9%; /* Dark zinc secondary - zinc-800 */
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 0 0% 9%; /* Dark zinc muted - zinc-800 */
+    --muted-foreground: 0 0% 64.9%; /* zinc-400 for better contrast */
+
+    --accent: 0 0% 9%; /* Dark zinc accent - zinc-800 */
+    --accent-foreground: 0 0% 98%;
+
+    --destructive: 0 84% 60%; /* Improved contrast for dark mode */
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 0 0% 14.9%; /* Dark zinc border - zinc-800 */
+    --input: 0 0% 9%; /* Dark zinc input background - zinc-800 */
+    --ring: 42 56% 41.6%; /* #a08032 - Golden focus ring */
+
+    --radius: 0.5rem;
+
+    --sidebar-background: 0 0% 3.9%; /* Very dark zinc */
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 42 56% 41.6%; /* #a08032 */
+    --sidebar-primary-foreground: 0 0% 3.9%; /* Very dark zinc */
+    --sidebar-accent: 0 0% 9%; /* Dark zinc accent - zinc-800 */
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 0 0% 14.9%; /* Dark zinc border - zinc-800 */
+    --sidebar-ring: 42 56% 41.6%; /* #a08032 */
+
+    /* Brand specific colors from brandbook */
+    --brand-primary: 42 56% 41.6%; /* #a08032 - Golden */
+    --brand-secondary: 0 0% 98%; /* Light text for dark mode */
+    --brand-dark: 0 0% 98%; /* Light text */
+    --brand-gray: 0 0% 64.9%; /* zinc-400 for better contrast */
+    --brand-light-gray: 0 0% 9%; /* Dark zinc for backgrounds - zinc-800 */
+  }
+
+  .dark {
+    --background: 0 0% 3.9%; /* Very dark zinc background - zinc-950 */
+    --foreground: 0 0% 98%;
+
+    --card: 0 0% 5.9%; /* Dark zinc card background - zinc-900 */
+    --card-foreground: 0 0% 98%;
+
+    --popover: 0 0% 5.9%; /* Dark zinc popover - zinc-900 */
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 42 56% 41.6%; /* #a08032 - Keep golden primary */
+    --primary-foreground: 0 0% 3.9%; /* Very dark zinc */
+
+    --secondary: 0 0% 9%; /* Dark zinc secondary - zinc-800 */
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 0 0% 9%; /* Dark zinc muted - zinc-800 */
+    --muted-foreground: 0 0% 64.9%; /* zinc-400 for better contrast */
+
+    --accent: 0 0% 9%; /* Dark zinc accent - zinc-800 */
+    --accent-foreground: 0 0% 98%;
+
+    --destructive: 0 84% 60%; /* Improved contrast for dark mode */
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 0 0% 14.9%; /* Dark zinc border - zinc-800 */
+    --input: 0 0% 9%; /* Dark zinc input background - zinc-800 */
+    --ring: 42 56% 41.6%; /* #a08032 */
+    
+    --sidebar-background: 0 0% 3.9%; /* Very dark zinc */
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 42 56% 41.6%; /* #a08032 */
+    --sidebar-primary-foreground: 0 0% 3.9%; /* Very dark zinc */
+    --sidebar-accent: 0 0% 9%; /* Dark zinc accent - zinc-800 */
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 0 0% 14.9%; /* Dark zinc border - zinc-800 */
+    --sidebar-ring: 42 56% 41.6%; /* #a08032 */
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+
+  /* Ensure all inputs and form elements have proper contrast */
+  input, textarea, select {
+    @apply bg-input text-foreground border-border;
+  }
+
+  input::placeholder, textarea::placeholder {
+    @apply text-muted-foreground;
+  }
+
+  /* Focus states for accessibility */
+  input:focus, textarea:focus, select:focus, button:focus {
+    @apply ring-2 ring-ring ring-offset-2 ring-offset-background outline-none;
+  }
+
+  /* Hover states for interactive elements */
+  button:hover:not(:disabled) {
+    @apply brightness-110;
+  }
+
+  /* Disabled states */
+  button:disabled, input:disabled, textarea:disabled, select:disabled {
+    @apply opacity-50 cursor-not-allowed;
+  }
+}
+
+@layer utilities {
+  .brand-primary {
+    @apply bg-gradient-to-r from-[#a08032] to-[#e6d280] text-white;
+  }
+  
+  .brand-secondary {
+    @apply bg-zinc-900 text-white;
+  }
+  
+  .brand-text-primary {
+    @apply text-[#a08032];
+  }
+  
+  .brand-text-secondary {
+    @apply text-zinc-100;
+  }
+  
+  .brand-text-dark {
+    @apply text-zinc-100;
+  }
+  
+  .brand-text-gray {
+    @apply text-zinc-400;
+  }
+  
+  .brand-border {
+    @apply border-zinc-800;
+  }
+  
+  .brand-bg-light {
+    @apply bg-zinc-900;
+  }
+  
+  .brand-bg-gray {
+    @apply bg-zinc-800;
+  }
+  
+  .brand-hover-primary {
+    @apply hover:from-[#8a6c2b] hover:to-[#d4c06b];
+  }
+  
+  .brand-focus-ring {
+    @apply focus:ring-[#a08032] focus:border-[#a08032];
+  }
+
+  .btn-gradient {
+    @apply bg-gradient-to-r from-[#a08032] to-[#e6d280] text-white;
+  }
+  
+  .btn-gradient:hover {
+    @apply from-[#8a6c2b] to-[#d4c06b];
+  }
+
+  /* Enhanced accessibility and interactive states */
+  .interactive-hover {
+    @apply transition-colors duration-200 hover:bg-zinc-800/50;
+  }
+
+  .card-dark {
+    @apply bg-zinc-900 border-zinc-800 text-zinc-100;
+  }
+
+  /* Standardized input styling matching Additional Information section */
+  .input-dark {
+    @apply bg-zinc-800 border-zinc-700 text-zinc-100 placeholder-zinc-400;
+  }
+
+  .input-dark:hover {
+    @apply bg-zinc-700 border-zinc-600;
+  }
+
+  .input-dark:focus {
+    @apply bg-zinc-700 border-[#a08032] ring-[#a08032];
+  }
+
+  /* Nutritional values with brand colors */
+  .nutrition-kcal {
+    @apply text-[#a08032] font-semibold; /* Brand primary color */
+  }
+
+  .nutrition-protein {
+    @apply text-green-400 font-semibold;
+  }
+
+  .nutrition-fat {
+    @apply text-yellow-400 font-semibold;
+  }
+
+  .nutrition-carbs {
+    @apply text-red-400 font-semibold;
+  }
+
+  .nutrition-fiber {
+    @apply text-purple-400 font-semibold;
+  }
+
+  /* Page backgrounds - ensure all pages have dark background */
+  .page-background {
+    @apply min-h-screen bg-background;
+  }
+
+  /* Component backgrounds - standardized to match Additional Information section */
+  .component-card {
+    @apply bg-zinc-900 border-zinc-800;
+  }
+
+  /* Modal and popover backgrounds */
+  .modal-background {
+    @apply bg-zinc-900 border-zinc-800;
+  }
+
+  /* Navigation styling - darker */
+  .nav-background {
+    @apply bg-zinc-900 border-zinc-800;
+  }
+
+  /* Form styling to match Additional Information section */
+  .form-section {
+    @apply space-y-4;
+  }
+
+  .form-label {
+    @apply text-sm font-medium text-zinc-200;
+  }
+
+  .form-grid {
+    @apply grid grid-cols-1 md:grid-cols-2 gap-4;
+  }
+
+  .form-grid-3 {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4;
+  }
+
+  /* Command component styling for ingredient search */
+  .command-input {
+    @apply h-10 px-3 py-2 border-0 bg-transparent text-zinc-100 placeholder-zinc-400 text-sm;
+  }
+
+  .command-input:focus {
+    @apply ring-0 outline-none;
+  }
+
+  .command-item {
+    @apply relative flex cursor-pointer select-none items-center rounded-sm px-3 py-2 text-sm outline-none;
+    @apply data-[disabled]:pointer-events-none data-[disabled]:opacity-50;
+    @apply hover:bg-zinc-600 hover:text-zinc-50 focus:bg-zinc-600 focus:text-zinc-50;
+    @apply transition-colors duration-150;
+  }
+
+  .command-empty {
+    @apply py-6 text-center text-sm text-zinc-400;
+  }
+
+  /* Popover content styling */
+  .ingredient-popover {
+    @apply w-full max-w-none bg-zinc-700 border-zinc-600 text-zinc-100 p-1;
+  }
+
+  /* Scrollable tabs styling */
+  .scrollbar-hide {
+    /* Firefox */
+    scrollbar-width: none;
+    /* Internet Explorer and Edge */
+    -ms-overflow-style: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    /* Chrome, Safari and Opera */
+    display: none;
+  }
+
+  /* Anti-autocomplete styles to prevent white background */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 1000px #27272a inset !important;
+    -webkit-text-fill-color: #f4f4f5 !important;
+    transition: background-color 5000s ease-in-out 0s;
+  }
+
+}

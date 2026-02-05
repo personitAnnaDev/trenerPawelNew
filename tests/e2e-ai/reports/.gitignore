@@ -1,0 +1,8 @@
+# Ignore all test reports (they contain test data and results)
+*
+
+# Allow .gitignore itself
+!.gitignore
+
+# Reports should be generated locally and not committed to repo
+# They may contain sensitive information or just be noise in git history
