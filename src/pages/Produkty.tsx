@@ -275,92 +275,28 @@ const Produkty = () => {
     }
   };
 
-  // Check if a product is used in dishes and meal_ingredients
+  // 🚀 OPTIMIZATION: Check product usage via PostgreSQL RPC (single query instead of multiple)
   const checkProductUsage = async (ingredientId: string) => {
     try {
-      // Check dishes (user's custom recipes)
-      const { data: dishesData, error: dishesError } = await supabase
-        .from('dishes')
-        .select('id, name, ingredients_json')
-        .eq('user_id', user?.id);
+      const { data, error } = await supabase.rpc('check_ingredient_usage', {
+        p_ingredient_id: ingredientId,
+        p_user_id: user?.id
+      });
 
-      if (dishesError) {
-        logger.error('Error checking dishes:', dishesError);
-      }
-
-      const usedInDishes = dishesData?.filter(dish =>
-        dish.ingredients_json?.some((ing: any) => ing.ingredient_id === ingredientId)
-      ) || [];
-
-      // Check meal_ingredients (ingredients in client diets)
-      const { data: mealIngredientsData, error: mealError } = await supabase
-        .from('meal_ingredients')
-        .select('id, name, meal_id(id, name, day_plan_id(id, name, template_id(id, title, user_id)))')
-        .eq('ingredient_id', ingredientId);
-
-      if (mealError) {
-        logger.error('Error checking meal_ingredients:', mealError);
-      }
-
-      // Separate templates from client diets - FILTER BY USER_ID
-      const withTemplates = mealIngredientsData?.filter((mi: any) =>
-        mi.meal_id?.day_plan_id?.template_id &&
-        mi.meal_id?.day_plan_id?.template_id?.user_id === user?.id
-      ) || [];
-
-      const withoutTemplates = mealIngredientsData?.filter((mi: any) =>
-        !mi.meal_id?.day_plan_id?.template_id && mi.meal_id?.day_plan_id
-      ) || [];
-
-      // Extract unique template names
-      const uniqueTemplateNames = Array.from(new Set(
-        withTemplates
-          .map((mi: any) => mi.meal_id?.day_plan_id?.template_id?.title)
-          .filter(Boolean)
-      ));
-
-      // Get unique day_plan_ids for client diets
-      const uniqueDayPlanIds = Array.from(new Set(
-        withoutTemplates
-          .map((mi: any) => mi.meal_id?.day_plan_id?.id)
-          .filter(Boolean)
-      ));
-
-      // Fetch client names for these day plans (only current user's clients)
-      let uniqueClientNames: string[] = [];
-      if (uniqueDayPlanIds.length > 0) {
-        const { data: clientData, error: clientError } = await supabase
-          .from('client_diet_settings')
-          .select('client_id, clients(first_name, last_name, user_id)')
-          .in('day_plan_id', uniqueDayPlanIds);
-
-        if (clientError) {
-          logger.error('Error fetching client names:', clientError);
-        } else {
-          uniqueClientNames = Array.from(new Set(
-            clientData
-              ?.map((cds: any) => {
-                const client = cds.clients;
-                // Filter only current user's clients
-                if (client && client.user_id === user?.id) {
-                  return `${client.first_name} ${client.last_name}`;
-                }
-                return null;
-              })
-              .filter(Boolean) || []
-          ));
-        }
+      if (error) {
+        logger.error('Error checking product usage via RPC:', error);
+        throw error;
       }
 
       return {
-        isUsed: usedInDishes.length > 0 || (mealIngredientsData?.length || 0) > 0,
-        dishCount: usedInDishes.length,
-        mealCount: mealIngredientsData?.length || 0,
-        templateCount: uniqueTemplateNames.length,
-        clientDietCount: uniqueClientNames.length,
-        dishNames: usedInDishes.map(d => d.name),
-        templateNames: uniqueTemplateNames,
-        clientDietNames: uniqueClientNames
+        isUsed: data?.is_used || false,
+        dishCount: data?.dish_count || 0,
+        mealCount: data?.meal_count || 0,
+        templateCount: data?.template_count || 0,
+        clientDietCount: data?.client_diet_count || 0,
+        dishNames: data?.dish_names || [],
+        templateNames: data?.template_names || [],
+        clientDietNames: data?.client_diet_names || []
       };
     } catch (error) {
       logger.error('Error checking product usage:', error);
