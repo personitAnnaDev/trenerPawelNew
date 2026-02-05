@@ -1,6 +1,7 @@
 -- Migration: Create update_ingredient_cached_macros function
 -- Purpose: Atomic update of all cached macros when an ingredient is edited
 -- Replaces N+1 frontend queries with single RPC call
+-- Also updates dish total macros (calories, protein, fat, carbs, fiber)
 
 CREATE OR REPLACE FUNCTION update_ingredient_cached_macros(
   p_ingredient_id UUID,
@@ -24,6 +25,11 @@ DECLARE
   v_meal_ingredients_updated INT := 0;
   v_updated_json JSONB;
   v_new_description TEXT;
+  v_total_calories NUMERIC;
+  v_total_protein NUMERIC;
+  v_total_fat NUMERIC;
+  v_total_carbs NUMERIC;
+  v_total_fiber NUMERIC;
 BEGIN
   -- 1. Update dishes that contain this ingredient
   FOR v_dish IN
@@ -106,11 +112,26 @@ BEGIN
     INTO v_new_description
     FROM jsonb_array_elements(v_updated_json) AS ing;
 
-    -- Update the dish
+    -- Calculate total dish macros from updated ingredients_json
+    SELECT
+      COALESCE(SUM((ing->>'calories')::NUMERIC), 0),
+      COALESCE(SUM((ing->>'protein')::NUMERIC), 0),
+      COALESCE(SUM((ing->>'fat')::NUMERIC), 0),
+      COALESCE(SUM((ing->>'carbs')::NUMERIC), 0),
+      COALESCE(SUM((ing->>'fiber')::NUMERIC), 0)
+    INTO v_total_calories, v_total_protein, v_total_fat, v_total_carbs, v_total_fiber
+    FROM jsonb_array_elements(v_updated_json) AS ing;
+
+    -- Update the dish with ingredients_json, description AND total macros
     UPDATE dishes
     SET
       ingredients_json = v_updated_json,
-      ingredients_description = v_new_description
+      ingredients_description = v_new_description,
+      calories = ROUND(v_total_calories, 2),
+      protein = ROUND(v_total_protein, 2),
+      fat = ROUND(v_total_fat, 2),
+      carbs = ROUND(v_total_carbs, 2),
+      fiber = ROUND(v_total_fiber, 2)
     WHERE id = v_dish.id;
 
     v_dishes_updated := v_dishes_updated + 1;
@@ -190,6 +211,7 @@ GRANT EXECUTE ON FUNCTION update_ingredient_cached_macros TO authenticated;
 COMMENT ON FUNCTION update_ingredient_cached_macros IS
 'Atomically updates all cached macros in dishes and meal_ingredients when an ingredient is edited.
 Replaces N+1 frontend queries with single database call.
+Also recalculates and updates dish total macros (calories, protein, fat, carbs, fiber).
 Parameters:
   p_ingredient_id - UUID of the ingredient being updated
   p_user_id - UUID of the user (for RLS on dishes)
