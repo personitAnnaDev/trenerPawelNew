@@ -18,7 +18,8 @@ import InstructionManager from "./InstructionManager";
 import { SelectedIngredient } from "./IngredientSelector";
 import SearchableIngredientInput from "./SearchableIngredientInput";
 import { getCategories, getProducts, getPotrawaById, savePotrawa, updatePotrawa, transformDishToFrontend, transformFrontendToDish } from "@/utils/supabasePotrawy";
-import { useNutritionCalculator } from "@/hooks/useNutritionCalculator";
+import { saveDishViaEdgeFunction, convertIngredientsForSave } from "@/services/saveDishService";
+import { useMealNutrition, MealIngredient } from "@/hooks/useMealNutrition";
 import { formatIngredientsString } from "@/utils/polishUnits";
 import { debounce } from "@/utils/debounce";
 import EditableNutritionSection from "./EditableNutritionSection";
@@ -214,8 +215,39 @@ const NowaPotrawa = ({ potrawaId, onClose, onPotrawaCreated, onFormChange }: Now
     }
   }, [isEditMode, potrawaToEdit, isLoadingPotrawa, form, products]);
 
-  // Calculate nutritional values using custom hook
-  const nutrition = useNutritionCalculator(selectedIngredients, products);
+  // 🚀 OPTIMIZATION: Memoizowana Map produktów dla O(1) lookup zamiast O(N)
+  const productsMap = useMemo(() => {
+    const map = new Map<string, typeof products extends (infer T)[] ? T : never>();
+    if (products) {
+      products.forEach(p => map.set(p.id, p));
+    }
+    return map;
+  }, [products]);
+
+  // 🚀 OPTIMIZATION: Konwertuj składniki do formatu dla backend RPC
+  const ingredientsForRpc = useMemo((): MealIngredient[] => {
+    return selectedIngredients.map(ing => ({
+      id: ing.productId,
+      quantity: ing.quantity,
+      unit: ing.unit,
+      unit_weight: ing.unit_weight
+    }));
+  }, [selectedIngredients]);
+
+  // 🚀 OPTIMIZATION: Obliczenia sum na backendzie (PostgreSQL RPC) z debounce
+  const { nutrition: backendNutrition, isLoading: isCalculating } = useMealNutrition(
+    ingredientsForRpc,
+    { debounceMs: 300 }
+  );
+
+  // Mapowanie z formatu backend na format frontend
+  const nutrition = useMemo(() => ({
+    kcal: backendNutrition.calories,
+    białko: backendNutrition.protein,
+    tłuszcz: backendNutrition.fat,
+    węglowodany: backendNutrition.carbs,
+    błonnik: backendNutrition.fiber
+  }), [backendNutrition]);
 
   // Initialize macroDraft when ingredients change
   useEffect(() => {
@@ -235,10 +267,64 @@ const NowaPotrawa = ({ potrawaId, onClose, onPotrawaCreated, onFormChange }: Now
     form.setValue('macro.błonnik', nutrition.błonnik);
   }, [nutrition, form]);
 
-  // Function to recalculate macros for a given ingredient based on products data
-  const recalculateMacros = (ingredient: SelectedIngredient) => {
-    // 🔧 FIX: Najpierw szukaj w products (źródło prawdy dla makr per 100g)
-    const product = products?.find(p => p.id === ingredient.productId);
+  // 🚀 OPTIMIZATION: Memoizowane makra per składnik (cache)
+  const ingredientMacrosCache = useMemo(() => {
+    const cache = new Map<string, { kcal: number; białko: number; tłuszcz: number; węglowodany: number; błonnik: number }>();
+
+    selectedIngredients.forEach(ingredient => {
+      const product = productsMap.get(ingredient.productId);
+
+      if (product) {
+        let unitWeight;
+        if (ingredient.unit === "gramy" || ingredient.unit === "g") {
+          unitWeight = 1;
+        } else if (ingredient.unit === "mililitry" || ingredient.unit === "ml") {
+          unitWeight = (product.unit_weight || 100);
+        } else {
+          unitWeight = product.unit_weight || ingredient.unit_weight || 100;
+        }
+
+        const macros = calculateNutritionMacros(ingredient.quantity, {
+          calories: product.calories || 0,
+          protein: product.protein || 0,
+          carbs: product.carbs || 0,
+          fat: product.fat || 0,
+          fiber: product.fiber || 0
+        }, unitWeight, ingredient.unit);
+
+        cache.set(ingredient.id, {
+          kcal: macros.calories,
+          białko: macros.protein,
+          tłuszcz: macros.fat,
+          węglowodany: macros.carbs,
+          błonnik: macros.fiber
+        });
+      } else if (ingredient.calories !== undefined && ingredient.protein !== undefined) {
+        // Fallback: użyj makr z ingredient (dla RPC search)
+        cache.set(ingredient.id, {
+          kcal: ingredient.calories || 0,
+          białko: ingredient.protein || 0,
+          tłuszcz: ingredient.fat || 0,
+          węglowodany: ingredient.carbs || 0,
+          błonnik: ingredient.fiber || 0
+        });
+      } else {
+        cache.set(ingredient.id, { kcal: 0, białko: 0, tłuszcz: 0, węglowodany: 0, błonnik: 0 });
+      }
+    });
+
+    return cache;
+  }, [selectedIngredients, productsMap]);
+
+  // Function to get cached macros for ingredient (O(1) lookup)
+  const recalculateMacros = useCallback((ingredient: SelectedIngredient) => {
+    return ingredientMacrosCache.get(ingredient.id) || { kcal: 0, białko: 0, tłuszcz: 0, węglowodany: 0, błonnik: 0 };
+  }, [ingredientMacrosCache]);
+
+  // Legacy function kept for compatibility - uses O(1) Map lookup now
+  const recalculateMacrosLegacy = (ingredient: SelectedIngredient) => {
+    // 🚀 OPTIMIZATION: O(1) Map lookup zamiast O(N) find
+    const product = productsMap.get(ingredient.productId);
 
     // Jeśli produkt znaleziony - oblicz makra na podstawie aktualnej ilości
     if (product) {
@@ -436,9 +522,46 @@ const NowaPotrawa = ({ potrawaId, onClose, onPotrawaCreated, onFormChange }: Now
           variant: "default",
         });
       } else {
-        // Save new dish
-        const newDish = await savePotrawa(dishData);
-        resultPotrawa = transformDishToFrontend(newDish);
+        // FAZA 3: Save new dish via Edge Function (atomowy zapis na backendzie)
+        const ingredientsForSave = convertIngredientsForSave(
+          selectedIngredients.map(ing => ({
+            id: ing.id,
+            productId: ing.productId,
+            productName: ing.nazwa,
+            quantity: ing.quantity,
+            unit: ing.unit,
+            unit_weight: products?.find(p => p.id === ing.productId)?.unit_weight,
+          }))
+        );
+
+        const savedDish = await saveDishViaEdgeFunction({
+          name: data.nazwa,
+          category: data.kategoria,
+          ingredients_json: ingredientsForSave,
+          instructions: validInstrukcje,
+          // Pass calculated macros (from useMealNutrition)
+          protein: data.macro.białko || 0,
+          fat: data.macro.tłuszcz || 0,
+          carbs: data.macro.węglowodany || 0,
+          fiber: data.macro.błonnik || 0,
+          calories: data.kcal,
+        });
+
+        resultPotrawa = {
+          id: savedDish.id,
+          nazwa: savedDish.name,
+          kategoria: savedDish.category,
+          skladniki: savedDish.ingredients_description,
+          instrukcja: savedDish.instructions,
+          macro: {
+            białko: savedDish.protein,
+            tłuszcz: savedDish.fat,
+            węglowodany: savedDish.carbs,
+            błonnik: savedDish.fiber,
+          },
+          kcal: savedDish.calories,
+          ingredients_json: savedDish.ingredients_json,
+        };
 
         // 🔧 FIX: Invalidate React Query cache to refetch fresh data
         queryClient.invalidateQueries({ queryKey: ['potrawy'] });
