@@ -35,3 +35,4 @@ coverage/
 
 # Supabase local
 .supabase/
+dist.zip
