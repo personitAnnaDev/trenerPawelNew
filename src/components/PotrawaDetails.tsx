@@ -43,8 +43,12 @@ interface PotrawaDetailsProps {
 }
 
 const PotrawaDetails = ({ potrawa, onClose }: PotrawaDetailsProps) => {
-  // Split by ", " (comma + space) to avoid splitting on decimal comma (e.g., "60,5 g")
-  const ingredientsList = potrawa.skladniki.split(", ").map((item) => item.trim()).filter((item) => item.length > 0);
+  // Match each ingredient by pattern "name - quantity unit" to handle names containing commas
+  // (e.g., "HASHI Makaron pełnoziarnisty/ryż (basmati, brązowy, dziki)/kasza gryczana - 50 gramów")
+  const ingredientsList = (
+    potrawa.skladniki.match(/.+?\s-\s[\d][\d,]*\s*\S*/g) ||
+    potrawa.skladniki.split(", ")
+  ).map((item) => item.replace(/^,\s*/, '').trim()).filter((item) => item.length > 0);
   const navigate = useNavigate();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false); // Nowy stan dla modala edycji
   const [hasEditFormChanges, setHasEditFormChanges] = useState(false);
