@@ -36,3 +36,6 @@ coverage/
 # Supabase local
 .supabase/
 dist.zip
+
+# MCP configuration (contains secrets)
+.mcp.json
