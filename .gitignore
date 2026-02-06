@@ -35,6 +35,7 @@ coverage/
 
 # Supabase local
 .supabase/
+supabase/.temp/
 dist.zip
 
 # MCP configuration (contains secrets)
