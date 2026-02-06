@@ -109,7 +109,9 @@
 ---
 
 ## Znane problemy
-- Brak zgloszonych krytycznych bugow (stan na 2025-02-06)
+- Powolnosc zglaszana przez klienta - backend optymalizacje wdrozone, moze wymagac planu Pro
+- Vite build: chunk size warning (react-pdf >1500kB) - nie krytyczne
+- Deploy ai-macro-optimization przez MCP nie dziala (plik ~70KB za duzy) - wymaga recznego deployu
 
 ---
 
@@ -122,6 +124,9 @@
 | 2025-02-06 | RPC check_ingredient_usage | 50-100x szybciej niz N+1 queries |
 | 2025-02-06 | RPC update_ingredient_cached_macros | 252 queries → 1 |
 | 2025-02-06 | Memory Bank setup | Lepsza ciaglosc miedzy sesjami Claude |
+| 2026-02-06 | Dynamiczny CORS na Edge Functions | Statyczny CORS/wildcard blokowal localhost, bezpieczenstwo |
+| 2026-02-06 | Regex match zamiast split dla skladnikow | Nazwy skladnikow z przecinkami byly rozbijane na osobne pozycje |
+| 2026-02-06 | Rekomendacja planu Pro Supabase | Free plan niewystarczajacy dla produkcji (pauzowanie, limity) |
 
 ---
 
