@@ -876,7 +876,7 @@ const DishSelectionModal = ({ isOpen, onClose, onSelectDish, onSave, meal, dayPl
               <div className="space-y-3 sm:space-y-4">
                 <h3 className="text-zinc-200 font-medium text-left">Składniki i wartości odżywcze</h3>
 
-                <div className="bg-zinc-900/50 rounded-lg p-3 sm:p-4 space-y-3 w-full max-w-full overflow-hidden">
+                <div className="bg-zinc-900/50 rounded-lg p-3 sm:p-4 space-y-3 w-full max-w-full">
                   {/* Desktop header labels - hidden on mobile */}
                   <div className="hidden md:grid grid-cols-12 gap-1 px-2">
                     <div className="col-span-4">
@@ -906,7 +906,7 @@ const DishSelectionModal = ({ isOpen, onClose, onSelectDish, onSave, meal, dayPl
                   </div>
 
                   {/* Ingredients list - responsive */}
-                  <div className="space-y-2 w-full max-w-full overflow-hidden">
+                  <div className="space-y-2 w-full max-w-full">
                     {ingredients.length === 0 ? (
                       <div className="p-6 text-center text-zinc-400">
                         <p>Brak składników. Użyj wyszukiwarki poniżej, aby dodać składniki.</p>

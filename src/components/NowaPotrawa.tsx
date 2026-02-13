@@ -677,9 +677,9 @@ const NowaPotrawa = ({ potrawaId, onClose, onPotrawaCreated, onFormChange }: Now
   }
 
   return (
-    <div className="w-full max-w-full overflow-hidden">
+    <div className="w-full max-w-full">
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 sm:space-y-6 w-full max-w-full overflow-x-hidden">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 sm:space-y-6 w-full max-w-full">
         {/* Name and Category Fields */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
           <FormField
@@ -731,7 +731,7 @@ const NowaPotrawa = ({ potrawaId, onClose, onPotrawaCreated, onFormChange }: Now
         </div>
 
         {/* 📱 RESPONSYWNY UI: Składniki i wartości odżywcze */}
-        <div className="w-full max-w-full space-y-2 overflow-hidden">
+        <div className="w-full max-w-full space-y-2">
           <Label className="text-gray-100">Składniki i wartości odżywcze</Label>
 
           <div className="bg-zinc-900/50 rounded-lg p-2 sm:p-3 space-y-2 w-full max-w-full">
